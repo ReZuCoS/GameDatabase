@@ -48,8 +48,12 @@ namespace API
                 options.LowercaseQueryStrings = true;
             });
 
+            builder.Configuration
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.ConnectionString.json", optional: false, reloadOnChange: true);
+
             builder.Services.AddDbContext<DatabaseContext>(options =>
-                options.UseNpgsql("CONNECTION_STRING"));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var swagger = GetSwaggerGenOptions();
             builder.Services.AddSwaggerGen(swagger);
