@@ -63,7 +63,7 @@ namespace API
                     License = new OpenApiLicense
                     {
                         Name = "License",
-                        Url = new Uri("https://www.gnu.org/licenses/gpl-3.0.en.html")
+                        Url = new Uri("https://opensource.org/license/mit/")
                     }
                 });
 
