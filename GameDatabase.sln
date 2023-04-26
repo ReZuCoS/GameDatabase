@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API", "API\API.csproj", "{1B8CB2F6-FF5B-4643-9F95-585117A5E3EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "API", "API\API.csproj", "{1B8CB2F6-FF5B-4643-9F95-585117A5E3EF}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Shared", "Shared\Shared.shproj", "{FB9335C6-1FC7-44E2-B331-A4C102D7CF6B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,5 +23,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {685FD1F0-B1CF-4454-B7DE-0E2C7BEFEB99}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Shared\Shared.projitems*{1b8cb2f6-ff5b-4643-9f95-585117a5e3ef}*SharedItemsImports = 5
+		Shared\Shared.projitems*{fb9335c6-1fc7-44e2-b331-a4c102d7cf6b}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal
