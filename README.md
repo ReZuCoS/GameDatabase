@@ -24,6 +24,7 @@ To connect the application to the database, create a **appsettings.ConnectionStr
 {
     "ConnectionStrings": {
         "DefaultConnection": "Server=host; Port=port; Database=database_name; User Id=user; Password=your_password;"
+    }
 }
 ```
 
