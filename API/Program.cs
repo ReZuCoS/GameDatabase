@@ -1,6 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using NLog;
 using NLog.Web;
+using Shared;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 
@@ -11,18 +13,7 @@ namespace API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-
-            builder.Services.Configure<RouteOptions>(options =>
-            {
-                options.LowercaseUrls = true;
-                options.LowercaseQueryStrings = true;
-            });
-
-            var swagger = GetSwaggerGenOptions();
-            builder.Services.AddSwaggerGen(swagger);
+            ConfigureServices(builder);
 
             LogManager
                 .Setup()
@@ -44,6 +35,24 @@ namespace API
             app.UseAuthorization();
             app.MapControllers();
             app.Run();
+        }
+
+        private static void ConfigureServices(WebApplicationBuilder builder)
+        {
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+
+            builder.Services.Configure<RouteOptions>(options =>
+            {
+                options.LowercaseUrls = true;
+                options.LowercaseQueryStrings = true;
+            });
+
+            builder.Services.AddDbContext<DatabaseContext>(options =>
+                options.UseNpgsql("CONNECTION_STRING"));
+
+            var swagger = GetSwaggerGenOptions();
+            builder.Services.AddSwaggerGen(swagger);
         }
 
         private static Action<SwaggerGenOptions> GetSwaggerGenOptions()
