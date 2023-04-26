@@ -16,4 +16,15 @@ I chose **PostgreSQL** as my database management system because it is a robust a
 
 ![Entity relationship diagram image](.media/Images/GameDatabase.svg)
 
+### API connectionString
+
+To connect the application to the database, create a **appsettings.ConnectionString.json** file in ./API directory with the following content before building the project: 
+
+```json
+{
+    "ConnectionStrings": {
+        "DefaultConnection": "Server=host; Port=port; Database=database_name; User Id=user; Password=your_password;"
+}
+```
+
 *This description will be updated as the project develops.*
