@@ -9,7 +9,6 @@
     <Import_RootNamespace>Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)DatabaseContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Model\Game.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Model\GameTranslation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)model\GameStatus.cs" />

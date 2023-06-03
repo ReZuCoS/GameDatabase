@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using NLog;
 using NLog.Web;
-using Shared;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 
@@ -47,7 +46,7 @@ namespace API
                 options.LowercaseUrls = true;
                 options.LowercaseQueryStrings = true;
             });
-
+            
             builder.Configuration
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                 .AddJsonFile("appsettings.ConnectionString.json", optional: false, reloadOnChange: true);
