@@ -20,11 +20,11 @@ namespace Shared.Model
         /// <summary>
         /// Language key, e.g. "EN"
         /// </summary>
-        public string Key { get; private set; } = default!;
+        public string Key { get; private set; } = "EN";
         /// <summary>
         /// Language name, e.g. "English"
         /// </summary>
-        public string Name { get; private set; } = default!;
+        public string Name { get; private set; } = "English";
 
         [JsonIgnore]
         public virtual ICollection<User> Users { get; set; }

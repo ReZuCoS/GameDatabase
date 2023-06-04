@@ -35,26 +35,22 @@ namespace Shared.Model
         /// <summary>
         /// User email
         /// </summary>
-        public string Email { get; set; } = default!;
+        public string TotpCode { get; set; } = default!;
         /// <summary>
         /// User profile link
         /// </summary>
         public string? ProfileImage { get; set; }
         /// <summary>
-        /// User verification status
-        /// </summary>
-        public bool IsVerified { get; set; } = false;
-        /// <summary>
         /// User preferred language key.
         /// Default = "EN"
         /// </summary>
-        [JsonIgnore]
         public string LanguageKey { get; set; } = "EN";
         /// <summary>
         /// User preferred language.
         /// Default = "EN"
         /// </summary>
-        public virtual Language Language { get; set; } = default!;
+        [JsonIgnore]
+        public virtual Language Language { get; set; } = new();
 
         [JsonIgnore]
         public virtual ICollection<UserGame> UserGames { get; set; }
