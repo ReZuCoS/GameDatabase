@@ -12,7 +12,8 @@ create table users(
     login varchar not null,
     password varchar not null,
     salt varchar not null,
-    totp_code varchar not null,
+    totp_key varchar not null,
+	totp_recoveries varchar[] not null,
     profile_image varchar null,
     language_key varchar not null default 'EN',
 

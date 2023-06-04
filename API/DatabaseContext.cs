@@ -46,7 +46,8 @@ namespace API
                 e.Property(e => e.Login).HasColumnName("login");
                 e.Property(e => e.Password).HasColumnName("password");
                 e.Property(e => e.Salt).HasColumnName("salt");
-                e.Property(e => e.TotpCode).HasColumnName("totp_code");
+                e.Property(e => e.TotpKey).HasColumnName("totp_key");
+                e.Property(e => e.TotpRecoveries).HasColumnName("totp_recoveries");
                 e.Property(e => e.ProfileImage).HasColumnName("profile_image");
                 e.Property(e => e.LanguageKey).HasColumnName("language_key");
 

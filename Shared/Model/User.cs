@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace Shared.Model
@@ -23,6 +25,7 @@ namespace Shared.Model
         /// <summary>
         /// User login
         /// </summary>
+        [Required]
         public string Login { get; set; } = default!;
         /// <summary>
         /// User password
@@ -31,11 +34,18 @@ namespace Shared.Model
         /// <summary>
         /// Password hash salt
         /// </summary>
-        public string Salt { get; set; } = default!;
+        [JsonIgnore]
+        public string? Salt { get; private set; }
         /// <summary>
-        /// User email
+        /// User TOTP (Time-based ope-time password) secret key
         /// </summary>
-        public string TotpCode { get; set; } = default!;
+        [JsonIgnore]
+        public string? TotpKey { get; private set; }
+        /// <summary>
+        /// User TOTP (Time-based ope-time password) recovery codes
+        /// </summary>
+        [JsonIgnore]
+        public string[]? TotpRecoveries { get; private set; }
         /// <summary>
         /// User profile link
         /// </summary>
@@ -44,7 +54,9 @@ namespace Shared.Model
         /// User preferred language key.
         /// Default = "EN"
         /// </summary>
-        public string LanguageKey { get; set; } = "EN";
+        [Required]
+        [DefaultValue("EN")]
+        public string LanguageKey { get; set; }
         /// <summary>
         /// User preferred language.
         /// Default = "EN"
