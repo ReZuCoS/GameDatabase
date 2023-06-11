@@ -21,7 +21,7 @@ namespace API
 
             builder.Logging.ClearProviders();
             builder.Host.UseNLog();
-
+            
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -38,6 +38,7 @@ namespace API
 
         private static void ConfigureServices(WebApplicationBuilder builder)
         {
+            builder.Services.AddMemoryCache();
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
