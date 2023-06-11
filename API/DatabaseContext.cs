@@ -40,9 +40,8 @@ namespace API
             modelBuilder.Entity<User>(e =>
             {
                 e.ToTable("users");
-                e.HasKey(e => e.ID);
+                e.HasKey(e => e.Login);
 
-                e.Property(e => e.ID).HasColumnName("id");
                 e.Property(e => e.Login).HasColumnName("login");
                 e.Property(e => e.Password).HasColumnName("password");
                 e.Property(e => e.Salt).HasColumnName("salt");
@@ -53,7 +52,7 @@ namespace API
 
                 e.HasMany(e => e.UserGames)
                     .WithOne(e => e.User)
-                    .HasForeignKey(e => e.UserID);
+                    .HasForeignKey(e => e.UserLogin);
             });
 
             modelBuilder.Entity<GameStatus>(e =>
@@ -125,10 +124,10 @@ namespace API
             modelBuilder.Entity<UserGame>(e =>
             {
                 e.ToTable("user_games");
-                e.HasKey(e => new { e.GameID, e.UserID });
+                e.HasKey(e => new { e.GameID, e.UserLogin });
 
                 e.Property(e => e.GameID).HasColumnName("game_id");
-                e.Property(e => e.UserID).HasColumnName("user_id");
+                e.Property(e => e.UserLogin).HasColumnName("user_login");
                 e.Property(e => e.Status).HasColumnName("status");
                 e.Property(e => e.CustomImageVertical).HasColumnName("custom_image_vertical");
                 e.Property(e => e.CustomImageHorizontal).HasColumnName("custom_image_horizontal");
