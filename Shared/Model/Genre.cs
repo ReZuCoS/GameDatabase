@@ -19,6 +19,7 @@ namespace Shared.Model
         /// Game genre ID
         /// </summary>
         public int ID { get; private set; }
+
         /// <summary>
         /// Game genre name
         /// </summary>

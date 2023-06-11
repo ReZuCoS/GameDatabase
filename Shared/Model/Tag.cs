@@ -19,6 +19,7 @@ namespace Shared.Model
         /// Game tag ID
         /// </summary>
         public int ID { get; private set; }
+
         /// <summary>
         /// Game tag name
         /// </summary>

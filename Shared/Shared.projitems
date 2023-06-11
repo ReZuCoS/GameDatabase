@@ -11,11 +11,11 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Model\Game.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Model\GameTranslation.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)model\GameStatus.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)model\Genre.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)model\Language.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)model\Tag.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)model\User.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)model\UserGame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\GameStatus.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\Genre.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\Language.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\Tag.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\User.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\UserGame.cs" />
   </ItemGroup>
 </Project>

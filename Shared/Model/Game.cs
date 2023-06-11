@@ -22,18 +22,22 @@ namespace Shared.Model
         /// Game ID
         /// </summary>
         public int ID { get; private set; }
+
         /// <summary>
         /// Game image vertical path
         /// </summary>
         public string ImageVertical { get; set; } = default!;
+
         /// <summary>
         /// Game image horizontal path
         /// </summary>
         public string ImageHorizontal { get; set; } = default!;
+
         /// <summary>
         /// Game average playtime in hours
         /// </summary>
         public short AvgPlaytimeInHours { get; set; } = default!;
+
         /// <summary>
         /// Game release date
         /// </summary>
@@ -41,10 +45,13 @@ namespace Shared.Model
 
         [JsonIgnore]
         public virtual ICollection<GameTranslation> GameTranslations { get; set; }
+
         [JsonIgnore]
         public virtual ICollection<UserGame> UserGames { get; set; }
+
         [JsonIgnore]
         public virtual ICollection<Genre> Genres { get; set; }
+
         [JsonIgnore]
         public virtual ICollection<Tag> Tags { get; set; }
     }

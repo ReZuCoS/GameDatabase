@@ -21,6 +21,7 @@ namespace Shared.Model
         /// Language key, e.g. "EN"
         /// </summary>
         public string Key { get; private set; } = "EN";
+
         /// <summary>
         /// Language name, e.g. "English"
         /// </summary>
@@ -28,8 +29,10 @@ namespace Shared.Model
 
         [JsonIgnore]
         public virtual ICollection<User> Users { get; set; }
+
         [JsonIgnore]
         public virtual ICollection<GameStatus> GameStatuses { get; set; }
+
         [JsonIgnore]
         public virtual ICollection<GameTranslation> GameTranslations { get; set; }
     }
