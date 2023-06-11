@@ -8,16 +8,15 @@ create table languages(
 insert into languages values ('EN', 'English');
 
 create table users(
-    id int not null generated always as identity,
     login varchar not null,
     password varchar not null,
     salt varchar not null,
-    totp_key varchar not null,
-	totp_recoveries varchar[] not null,
+    totp_key varchar null,
+	totp_recoveries varchar[] null,
     profile_image varchar null,
     language_key varchar not null default 'EN',
 
-    primary key(id),
+    primary key(login),
     foreign key(language_key) references languages(key) on delete set default
 );
 
@@ -85,14 +84,14 @@ create table game_tags(
 
 create table user_games(
     game_id int not null,
-    user_id int not null,
+    user_login varchar not null,
     status int not null,
     custom_image_vertical varchar null,
     custom_image_horizontal varchar null,
     user_rate smallint null,
 
-    primary key(game_id, user_id),
+    primary key(game_id, user_login),
     foreign key(game_id) references games(id) on delete cascade,
-    foreign key(user_id) references users(id) on delete cascade,
+    foreign key(user_login) references users(login) on delete cascade,
     foreign key(status) references game_statuses(id) on delete cascade
 );
