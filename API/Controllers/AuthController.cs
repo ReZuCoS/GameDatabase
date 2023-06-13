@@ -1,49 +1,176 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using API.Model;
+using API.Model.Authorization;
+using API.Model.DataTransferObjects;
+using API.Utils;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Shared.Model;
 
 namespace API.Controllers
 {
+    [Route("api")]
     [ApiController]
-    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IMemoryCache _cache;
         private readonly DatabaseContext _databaseContext;
         private readonly ILogger<AuthController> _logger;
+        private readonly IConfiguration _configuration;
 
-        public AuthController(DatabaseContext databaseContext, IMemoryCache cache, ILogger<AuthController> logger)
+        public AuthController(
+            DatabaseContext databaseContext,
+            IMemoryCache cache,
+            ILogger<AuthController> logger,
+            IConfiguration configuration)
         {
             _databaseContext = databaseContext;
             _cache = cache;
             _logger = logger;
+            _configuration = configuration;
         }
-
-        /// <summary>
-        /// Returns user's salt by login
-        /// </summary>
-        /// <response code="200">Successfully returned</response>
-        /// <response code="400">Validation error</response>
-        /// <response code="409">User with this login doesn't exists</response>
-        /// <response code="500">Internal server error</response>
+        // AuthorizationFilter as attribute https://www.youtube.com/watch?v=GrJJXixjR8M&t=342s 11:20
         [HttpGet]
+        [Route("register")]
+        [ServiceFilter(typeof(AuthorizationFilter))]
         public async Task<ActionResult<string>> GetSalt(string login)
         {
+            var salt = _cache.Get<string>(login) ?? "";
+
+            if (!string.IsNullOrEmpty(salt))
+            {
+                return Ok(salt);
+            }
+
             try
             {
-                var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Login == login);
-
-                if (user == null)
+                if (await _databaseContext.Users.AnyAsync(u => u.Login == login))
                 {
-                    return Conflict("Login doesn't exists");
+                    return Conflict("Login exists");
                 }
 
-                return Ok(user.Salt);
+                salt = HashGenerator.GenerateSalt(64);
+
+                _cache.Set(login, salt, TimeSpan.FromMinutes(5));
+                return Ok(salt);
             }
             catch (Exception)
             {
                 return Problem("Internal server error");
             }
         }
+
+        [HttpPost]
+        [Route("register")]
+        public async Task<ActionResult<UserDto>> AddUser(User user)
+        {
+            user.Salt = _cache.Get<string>(user.Login) ?? "";
+
+            if (string.IsNullOrEmpty(user.Salt))
+            {
+                return NotFound("This login haven't generated salt or it's expired");
+            }
+
+            try
+            {
+                await _databaseContext.Users.AddAsync(user);
+                await _databaseContext.SaveChangesAsync();
+
+                _cache.Remove(user.Login);
+                _logger.LogInformation("Added new user: {login}", user.Login);
+
+                return Ok(new UserDto(user));
+            }
+            catch (Exception)
+            {
+                return Problem("Internal server error");
+            }
+        }
+
+        [HttpGet]
+        [Route("auth")]
+        public async Task<ActionResult<ServerSecretDto>> GetAuthData(string login)
+        {
+            var serverSecret = _cache.Get<ServerSecretDto>(login);
+
+            if (serverSecret != null)
+            {
+                return Ok(serverSecret);
+            }
+
+            try
+            {
+                var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Login == login);
+
+                if (user == null)
+                {
+                    return NotFound("User not found");
+                }
+
+                var challenge = HashGenerator.GenerateSalt(64);
+
+                serverSecret = new ServerSecretDto()
+                {
+                    Salt = user.Salt,
+                    Challenge = challenge
+                };
+
+                _cache.Set(user.Login, serverSecret, TimeSpan.FromMinutes(5));
+
+                return Ok(serverSecret);
+            }
+            catch (Exception)
+            {
+                return Problem("Internal server error");
+            }
+        }
+
+        [HttpPost]
+        [Route("auth")]
+        public async Task<IActionResult> VerifySecret(ClientSecretDto clientSecret)
+        {
+            try
+            {
+                var serverSecret = _cache.Get<ServerSecretDto>(clientSecret.Login);
+                
+                if (serverSecret == null)
+                {
+                    return Conflict("This login haven't generated challenge or it's expired");
+                }
+                
+                var user = await _databaseContext.Users.FirstAsync(u => u.Login == clientSecret.Login);
+
+                var calculationResult = HashGenerator.GetSHA256Hash(user.Password + serverSecret.Challenge + clientSecret.Challenge);
+
+                if (clientSecret.HashSecret != calculationResult)
+                {
+                    return NotFound("Wrong username or password");
+                }
+
+                _cache.Remove(clientSecret.Login);
+                _logger.LogInformation("User authenticated with password: {login}", user.Login);
+                return Ok(new UserDto(user));
+            }
+            catch (Exception)
+            {
+                return Problem("Internal server error");
+            }
+        }
+
+        [HttpPost]
+        [Route("/api/2fa")]
+        public async Task<ActionResult<UserDto>> GetUserData(ClientSecretDto clientSecret)
+        {
+            try
+            {
+                return null;
+            }
+            catch (Exception)
+            {
+                return Problem("Internal server error");
+            }
+        }
+
+
     }
 }

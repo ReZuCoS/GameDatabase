@@ -1,19 +1,24 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace API.Model
+namespace API.Utils
 {
     public class HashGenerator
     {
-        public static string GetSHA256Hash(string input, string salt)
+        public static string GetSHA256Hash(string input)
         {
             StringBuilder builder = new();
-            byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(input + salt));
+            byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
 
             foreach (byte b in hashBytes)
                 builder.Append(b.ToString("x2"));
 
             return builder.ToString();
+        }
+
+        public static string GetSHA256Hash(string input, string salt)
+        {
+            return GetSHA256Hash(input + salt);
         }
 
         public static string GenerateSalt(int length)
@@ -36,7 +41,7 @@ namespace API.Model
                         break;
                 }
             }
-            
+
             return builder.ToString();
         }
     }

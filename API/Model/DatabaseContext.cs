@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Shared.Model;
 
-namespace API
+namespace API.Model
 {
     public class DatabaseContext : DbContext
     {

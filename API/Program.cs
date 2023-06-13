@@ -1,3 +1,6 @@
+﻿using API.Middleware;
+using API.Model;
+using API.Model.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using NLog;
@@ -31,6 +34,7 @@ namespace API
             }
 
             app.UseHttpsRedirection();
+            //app.UseMiddleware<AuthenticationMiddleware>();
             app.UseAuthorization();
             app.MapControllers();
             app.Run();
@@ -41,6 +45,7 @@ namespace API
             builder.Services.AddMemoryCache();
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddScoped<AuthorizationFilter>();
 
             builder.Services.Configure<RouteOptions>(options =>
             {
@@ -50,7 +55,8 @@ namespace API
             
             builder.Configuration
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.ConnectionString.json", optional: false, reloadOnChange: true);
+                .AddJsonFile("appsettings.ConnectionString.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.ApiKey.json", optional: false, reloadOnChange: true);
 
             builder.Services.AddDbContext<DatabaseContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -77,6 +83,29 @@ namespace API
                     {
                         Name = "License",
                         Url = new Uri("https://opensource.org/license/mit/")
+                    }
+                });
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please insert JWT with Bearer into field",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
                     }
                 });
 

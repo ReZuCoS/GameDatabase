@@ -23,10 +23,12 @@ namespace API.Model.DataTransferObjects
         /// User login
         /// </summary>
         public string Login { get; set; } = default!;
+
         /// <summary>
         /// User profile link
         /// </summary>
         public string? ProfileImage { get; set; }
+
         /// <summary>
         /// User preferred language key.
         /// Default = "EN"
