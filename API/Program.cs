@@ -1,12 +1,14 @@
 ﻿using API.Middleware;
 using API.Model;
-using API.Model.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NLog;
 using NLog.Web;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
+using System.Text;
 
 namespace API
 {
@@ -34,7 +36,8 @@ namespace API
             }
 
             app.UseHttpsRedirection();
-            //app.UseMiddleware<AuthenticationMiddleware>();
+            app.UseMiddleware<ApiKeyAuthMiddleware>();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
             app.Run();
@@ -45,21 +48,42 @@ namespace API
             builder.Services.AddMemoryCache();
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddScoped<AuthorizationFilter>();
 
             builder.Services.Configure<RouteOptions>(options =>
             {
                 options.LowercaseUrls = true;
                 options.LowercaseQueryStrings = true;
             });
-            
+
             builder.Configuration
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.ConnectionString.json", optional: false, reloadOnChange: true)
-                .AddJsonFile("appsettings.ApiKey.json", optional: false, reloadOnChange: true);
+                .AddJsonFile("appsettings.Secrets.json", optional: false, reloadOnChange: true);
 
             builder.Services.AddDbContext<DatabaseContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    IssuerSigningKey = new SymmetricSecurityKey
+                        (Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("JwtSettings:Key")!)),
+                    
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true
+
+                };
+            });
+
+            builder.Services.AddAuthorization();
 
             var swagger = GetSwaggerGenOptions();
             builder.Services.AddSwaggerGen(swagger);
@@ -86,12 +110,22 @@ namespace API
                     }
                 });
 
-                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
-                    Description = "Please insert JWT with Bearer into field",
-                    Name = "Authorization",
+                    Description = "Please insert API key into field below",
+                    Name = "ApiKey",
                     Type = SecuritySchemeType.ApiKey
+                });
+
+                options.AddSecurityDefinition("Authorization", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please insert authorization key into field below",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    BearerFormat = "JWT",
+                    Scheme = "Bearer"
                 });
 
                 options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -102,7 +136,18 @@ namespace API
                             Reference = new OpenApiReference
                             {
                                 Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
+                                Id = "ApiKey"
+                            }
+                        },
+                        Array.Empty<string>()
+                    },
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Authorization"
                             }
                         },
                         Array.Empty<string>()
