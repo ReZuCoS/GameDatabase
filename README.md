@@ -12,15 +12,43 @@ I chose **PostgreSQL** as my database management system because it is a robust a
 
 ![Entity relationship diagram image](.media/Images/GameDatabase.svg)
 
+## Secrets configuration
+
+To add database connection strings, JWT settings or API key just create **appsettings.Secrets.json** file in ./API directory, with the following content before building
+
 ### Database Connection string
 
-To connect the application to the database, create a **appsettings.ConnectionString.json** file in ./API directory with the following content before building the project: 
+To connect the application to the database, add following content to your secrets config before building the project: 
 
 ```json
 {
-    "ConnectionStrings": {
-        "DefaultConnection": "Server=host; Port=port; Database=database_name; User Id=user; Password=your_password;"
-    }
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=<HOST>; Port=<PORT>; Database=<DATABASE_NAME>; User Id=<USERNAME>; Password=<YOUR_PASSWORD>;"
+  }
+}
+```
+
+### API key
+
+API authorization works by adding ***Authentication:ApiKey*** field to config:
+
+```json
+{
+  "Authentication": {
+    "ApiKey": "<YOUR_API_KEY>"
+  }
+}
+```
+
+### JWT key
+
+JWT requires key to sign user tokens, so we basically need to add ***JwtSettings:Key*** field to **appsettings.Secrets.json** config:
+
+```json
+{
+  "JwtSettings": {
+    "Key": "<YOUR_JWT_SIGN_KEY>"
+  }
 }
 ```
 

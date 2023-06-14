@@ -1,11 +1,14 @@
 ﻿using API.Model;
-using API.Model.Authorization;
 using API.Model.DataTransferObjects;
 using API.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.IdentityModel.Tokens;
 using Shared.Model;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace API.Controllers
 {
@@ -29,10 +32,35 @@ namespace API.Controllers
             _logger = logger;
             _configuration = configuration;
         }
-        // AuthorizationFilter as attribute https://www.youtube.com/watch?v=GrJJXixjR8M&t=342s 11:20
+
+        [HttpGet]
+        [Route("token")]
+        public async Task<ActionResult<string>> GetToken(string login)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes("gLVJUYSzIugLVJUYSzIugLVJUYSzIugLVJUYSzIugLVJUYSzIugLVJUYSzIugLVJUYSzIu");
+
+            var claims = new List<Claim>()
+            {
+                new Claim("login", login)
+            };
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.Add(TimeSpan.FromHours(1)),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            var jwt = tokenHandler.WriteToken(token);
+
+            return Ok(jwt);
+        }
+
         [HttpGet]
         [Route("register")]
-        [ServiceFilter(typeof(AuthorizationFilter))]
         public async Task<ActionResult<string>> GetSalt(string login)
         {
             var salt = _cache.Get<string>(login) ?? "";
