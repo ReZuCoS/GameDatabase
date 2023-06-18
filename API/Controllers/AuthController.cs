@@ -1,10 +1,12 @@
 ﻿using API.Model;
 using API.Model.DataTransferObjects;
 using API.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
+using OtpNet;
 using Shared.Model;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -12,56 +14,41 @@ using System.Text;
 
 namespace API.Controllers
 {
-    [Route("api")]
     [ApiController]
+    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IMemoryCache _cache;
+        private readonly HttpContextClaims _contextClaims;
         private readonly DatabaseContext _databaseContext;
-        private readonly ILogger<AuthController> _logger;
+        private readonly IMemoryCache _cache;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             DatabaseContext databaseContext,
             IMemoryCache cache,
+            IConfiguration configuration,
             ILogger<AuthController> logger,
-            IConfiguration configuration)
+            IHttpContextAccessor httpContext)
         {
-            _databaseContext = databaseContext;
             _cache = cache;
             _logger = logger;
+            _contextClaims = new HttpContextClaims(httpContext);
             _configuration = configuration;
+            _databaseContext = databaseContext;
         }
 
+        /// <summary>
+        /// Generates salt if login not exists
+        /// </summary>
+        /// <param name="login">User's login</param>
+        /// <response code="200">Successfully returned salt</response>
+        /// <response code="409">Login exists</response>
+        /// <response code="500">Unexpected server error</response>
         [HttpGet]
-        [Route("token")]
-        public async Task<ActionResult<string>> GetToken(string login)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes("gLVJUYSzIugLVJUYSzIugLVJUYSzIugLVJUYSzIugLVJUYSzIugLVJUYSzIugLVJUYSzIu");
-
-            var claims = new List<Claim>()
-            {
-                new Claim("login", login)
-            };
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.Add(TimeSpan.FromHours(1)),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-
-            var jwt = tokenHandler.WriteToken(token);
-
-            return Ok(jwt);
-        }
-
-        [HttpGet]
-        [Route("register")]
-        public async Task<ActionResult<string>> GetSalt(string login)
+        [AllowAnonymous]
+        [Route("generate_salt")]
+        public async Task<ActionResult<string>> GenerateSalt(string login)
         {
             var salt = _cache.Get<string>(login) ?? "";
 
@@ -76,23 +63,30 @@ namespace API.Controllers
                 {
                     return Conflict("Login exists");
                 }
-
-                salt = HashGenerator.GenerateSalt(64);
-
-                _cache.Set(login, salt, TimeSpan.FromMinutes(5));
-                return Ok(salt);
             }
             catch (Exception)
             {
                 return Problem("Internal server error");
             }
+
+            salt = HashGenerator.GenerateSalt(64);
+
+            _cache.Set(login, salt, TimeSpan.FromMinutes(5));
+            return Ok(salt);
         }
 
+        /// <summary>
+        /// If salt was found in cache, adds new user to database and returns it's data
+        /// </summary>
+        /// <response code="200">Successfully added new user</response>
+        /// <response code="404">Salt not found in cache</response>
+        /// <response code="500">Unexpected server error</response>
         [HttpPost]
+        [AllowAnonymous]
         [Route("register")]
         public async Task<ActionResult<UserDto>> AddUser(User user)
         {
-            user.Salt = _cache.Get<string>(user.Login) ?? "";
+            user.Salt = _cache.Get<string>(user.Login) ?? string.Empty;
 
             if (string.IsNullOrEmpty(user.Salt))
             {
@@ -107,7 +101,11 @@ namespace API.Controllers
                 _cache.Remove(user.Login);
                 _logger.LogInformation("Added new user: {login}", user.Login);
 
-                return Ok(new UserDto(user));
+                return Ok(new UserDto
+                {
+                    AccessToken = GetJwtToken(user),
+                    ProfileImage = user.ProfileImage
+                });
             }
             catch (Exception)
             {
@@ -115,13 +113,20 @@ namespace API.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns server secret wich includes random hash challenge and client's salt
+        /// </summary>
+        /// <param name="login">User's login</param>
+        /// <response code="200">Successfully returned server secret</response>
+        /// <response code="404">User not found</response>
+        /// <response code="500">Unexpected server error</response>
         [HttpGet]
-        [Route("auth")]
-        public async Task<ActionResult<ServerSecretDto>> GetAuthData(string login)
+        [AllowAnonymous]
+        public async Task<ActionResult<ServerSecretDto>> GetServerSecret(string login)
         {
             var serverSecret = _cache.Get<ServerSecretDto>(login);
 
-            if (serverSecret != null)
+            if (serverSecret is not null)
             {
                 return Ok(serverSecret);
             }
@@ -130,7 +135,7 @@ namespace API.Controllers
             {
                 var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Login == login);
 
-                if (user == null)
+                if (user is null)
                 {
                     return NotFound("User not found");
                 }
@@ -153,15 +158,20 @@ namespace API.Controllers
             }
         }
 
+        /// <summary>
+        /// If challenge was found in cache and calculations is right, returns user data
+        /// </summary>
+        /// <response code="200">Returned user data. If AccessToken is empty, continue with 2FA code</response>
+        /// <response code="500">Unexpected server error</response>
         [HttpPost]
-        [Route("auth")]
-        public async Task<IActionResult> VerifySecret(ClientSecretDto clientSecret)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserData(ClientSecretDto clientSecret)
         {
             try
             {
                 var serverSecret = _cache.Get<ServerSecretDto>(clientSecret.Login);
                 
-                if (serverSecret == null)
+                if (serverSecret is null)
                 {
                     return Conflict("This login haven't generated challenge or it's expired");
                 }
@@ -176,8 +186,23 @@ namespace API.Controllers
                 }
 
                 _cache.Remove(clientSecret.Login);
-                _logger.LogInformation("User authenticated with password: {login}", user.Login);
-                return Ok(new UserDto(user));
+                _logger.LogInformation("User authenticated with password: {login}, OTP required: {otp}", user.Login, user.TotpKey is not null);
+
+                var accessToken = GetJwtToken(user);
+                
+                if (user.TotpKey is not null)
+                {
+                    _cache.Set(
+                        user.Login,
+                        new UserTotpAccess(accessToken, user.TotpKey),
+                        TimeSpan.FromMinutes(5));
+                }
+
+                return Ok(new UserDto()
+                {
+                    AccessToken = user.TotpKey is null ? accessToken : string.Empty,
+                    ProfileImage = user.ProfileImage
+                });
             }
             catch (Exception)
             {
@@ -185,13 +210,127 @@ namespace API.Controllers
             }
         }
 
+        /// <summary>
+        /// Verifies request 2FA totp code
+        /// </summary>
+        /// <param name="login">User's login</param>
+        /// <param name="code">TOTP code</param>
+        /// <response code="200">Successfully returned UserToken</response>
+        /// <response code="404">Login haven't generated token or it's expired</response>
+        /// <response code="500">Unexpected server error</response>
         [HttpPost]
-        [Route("/api/2fa")]
-        public async Task<ActionResult<UserDto>> GetUserData(ClientSecretDto clientSecret)
+        [AllowAnonymous]
+        [Route("2fa/verify")]
+        public ActionResult<string> Verify2Factor(string login, string code)
         {
+            var accessData = _cache.Get<UserTotpAccess>(login);
+
+            if (accessData is null)
+            {
+                return NotFound("This login haven't generated totp key or it's expired");
+            }
+
+            var isValid = new Totp(Base32Encoding.ToBytes(accessData.TotpKey))
+                .VerifyTotp(code, out _, VerificationWindow.RfcSpecifiedNetworkDelay);
+
+            if (!isValid)
+            {
+                BadRequest("Code is invalid");
+            }
+
+            _cache.Remove(login);
+
+            return Ok(accessData.AccessToken);
+        }
+
+        /// <summary>
+        /// Generates 2FA for user is he hasn't
+        /// </summary>
+        /// <response code="200">Successfully generated a TOTP code with a lifetime of 5 minutes. Requires POST confirmation</response>
+        /// <response code="400">Invalid access token</response>
+        /// <response code="404">User not found or TOTP alredy generated</response>
+        /// <response code="500">Unexpected server error</response>
+        [HttpGet]
+        [Authorize]
+        [Route("2fa")]
+        public async Task<ActionResult<string>> Get2FA()
+        {
+            var login = _contextClaims.Get("login");
+
+            if (login is null)
+            {
+                return BadRequest("Access token is invalid");
+            }
+
             try
             {
-                return null;
+                if (!await _databaseContext.Users.AnyAsync(u => u.Login == login && u.TotpKey == null))
+                {
+                    return NotFound("User not found or alredy has generated totp key");
+                }
+            }
+            catch(Exception)
+            {
+                return Problem("Internal server error");
+            }
+
+            var totpKey = Base32Encoding.ToString(KeyGeneration.GenerateRandomKey(25));
+
+            _cache.Set(login, totpKey, TimeSpan.FromMinutes(5));
+
+            return Ok(totpKey);
+        }
+
+        /// <summary>
+        /// Saves generated user's TOTP key
+        /// </summary>
+        /// <param name="code">TOTP code</param>
+        /// <response code="200">Successfully saved TOTP code</response>
+        /// <response code="400">Invalid access token or TOTP code</response>
+        /// <response code="404">User not found or TOTP alredy generated; TOTP data key not generated by GET</response>
+        /// <response code="500">Unexpected server error</response>
+        [HttpPost]
+        [Authorize]
+        [Route("2fa")]
+        public async Task<ActionResult<string>> Set2FA(string code)
+        {
+            var login = _contextClaims.Get("login");
+
+            if (login is null)
+            {
+                return BadRequest("Access token is invalid");
+            }
+
+            try
+            {
+                var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Login == login);
+
+                if (user is null)
+                {
+                    return NotFound("User not found");
+                }
+
+                var totpKey = _cache.Get<string>(login);
+
+                if (totpKey is null)
+                {
+                    return NotFound("This login haven't generated key or it's expired");
+                }
+
+                var isValid = new Totp(Base32Encoding.ToBytes(totpKey))
+                    .VerifyTotp(code, out long _, VerificationWindow.RfcSpecifiedNetworkDelay);
+
+                if (!isValid)
+                {
+                    return BadRequest("Totp code is invalid");
+                }
+
+                _cache.Remove(login);
+                user.TotpKey = totpKey;
+                _databaseContext.Users.Update(user);
+                _databaseContext.SaveChanges();
+
+                return Ok();
             }
             catch (Exception)
             {
@@ -199,6 +338,32 @@ namespace API.Controllers
             }
         }
 
+        private string GetJwtToken(User user)
+        {
 
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            var key = Encoding.UTF8.GetBytes(_configuration.GetValue<string>("JwtSettings:Key")!);
+            var tokenLifetime = TimeSpan.FromSeconds(_configuration.GetValue<int>("JwtSettings:LifetimeInSeconds")!);
+            var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
+
+            var claims = new List<Claim>()
+            {
+                new Claim("login", user.Login),
+                new Claim("languageKey", user.LanguageKey),
+            };
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                NotBefore = DateTime.UtcNow,
+                Expires = DateTime.UtcNow.Add(tokenLifetime),
+                SigningCredentials = signingCredentials
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            return tokenHandler.WriteToken(token);
+        }
     }
 }
