@@ -14,6 +14,7 @@ using System.Text;
 
 namespace API.Controllers
 {
+    // TODO: Add TOTP recoveries generation and usage
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
