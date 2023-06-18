@@ -1,7 +1,3 @@
-using Shared.Model;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-
 namespace API.Model.DataTransferObjects
 {
     /// <summary>
@@ -12,29 +8,25 @@ namespace API.Model.DataTransferObjects
         /// <summary>
         /// Game database user data transfer object
         /// </summary>
-        public UserDto(User user)
+        public UserDto() { }
+
+        /// <summary>
+        /// Game database user data transfer object
+        /// </summary>
+        public UserDto(string accessToken, string profileImage)
         {
-            Login = user.Login;
-            ProfileImage = user.ProfileImage;
-            LanguageKey = user.LanguageKey;
+            AccessToken = accessToken;
+            ProfileImage = profileImage;
         }
 
         /// <summary>
-        /// User login
+        /// User access token
         /// </summary>
-        public string Login { get; set; } = default!;
+        public string AccessToken { get; set; } = default!;
 
         /// <summary>
         /// User profile link
         /// </summary>
         public string? ProfileImage { get; set; }
-
-        /// <summary>
-        /// User preferred language key.
-        /// Default = "EN"
-        /// </summary>
-        [Required]
-        [DefaultValue("EN")]
-        public string LanguageKey { get; set; }
     }
 }
