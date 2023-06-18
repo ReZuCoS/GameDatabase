@@ -55,6 +55,11 @@ namespace API
                 options.LowercaseQueryStrings = true;
             });
 
+            var swagger = GetSwaggerGenOptions();
+            builder.Services.AddSwaggerGen(swagger);
+
+            builder.Services.AddHttpContextAccessor();
+
             builder.Configuration
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                 .AddJsonFile("appsettings.Secrets.json", optional: false, reloadOnChange: true);
@@ -71,22 +76,20 @@ namespace API
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
+                    ClockSkew = TimeSpan.FromMinutes(3),
+
                     IssuerSigningKey = new SymmetricSecurityKey
                         (Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("JwtSettings:Key")!)),
                     
                     ValidateIssuer = false,
                     ValidateAudience = false,
-
+                    
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true
-
                 };
             });
 
             builder.Services.AddAuthorization();
-
-            var swagger = GetSwaggerGenOptions();
-            builder.Services.AddSwaggerGen(swagger);
         }
 
         private static Action<SwaggerGenOptions> GetSwaggerGenOptions()
@@ -110,19 +113,19 @@ namespace API
                     }
                 });
 
-                options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
-                {
-                    In = ParameterLocation.Header,
-                    Description = "Please insert API key into field below",
-                    Name = "ApiKey",
-                    Type = SecuritySchemeType.ApiKey
-                });
-
                 options.AddSecurityDefinition("Authorization", new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
-                    Description = "Please insert authorization key into field below",
+                    Description = "Please insert API key into field below",
                     Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
+
+                options.AddSecurityDefinition("AccessToken", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please insert user access token into field below",
+                    Name = "AccessToken",
                     Type = SecuritySchemeType.Http,
                     BearerFormat = "JWT",
                     Scheme = "Bearer"
@@ -136,7 +139,7 @@ namespace API
                             Reference = new OpenApiReference
                             {
                                 Type = ReferenceType.SecurityScheme,
-                                Id = "ApiKey"
+                                Id = "Authorization"
                             }
                         },
                         Array.Empty<string>()
@@ -147,7 +150,7 @@ namespace API
                             Reference = new OpenApiReference
                             {
                                 Type = ReferenceType.SecurityScheme,
-                                Id = "Authorization"
+                                Id = "AccessToken"
                             }
                         },
                         Array.Empty<string>()
