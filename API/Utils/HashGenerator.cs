@@ -3,7 +3,7 @@ using System.Text;
 
 namespace API.Utils
 {
-    public class HashGenerator
+    public static class HashGenerator
     {
         public static string GetSHA256Hash(string input)
         {
