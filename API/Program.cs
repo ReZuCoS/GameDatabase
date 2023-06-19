@@ -76,7 +76,7 @@ namespace API
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ClockSkew = TimeSpan.FromMinutes(3),
+                    ClockSkew = TimeSpan.FromSeconds(30),
 
                     IssuerSigningKey = new SymmetricSecurityKey
                         (Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("JwtSettings:Key")!)),
