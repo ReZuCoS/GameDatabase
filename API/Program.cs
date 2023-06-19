@@ -113,19 +113,19 @@ namespace API
                     }
                 });
 
-                options.AddSecurityDefinition("Authorization", new OpenApiSecurityScheme
+                options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
                     Description = "Please insert API key into field below",
-                    Name = "Authorization",
+                    Name = "ApiKey",
                     Type = SecuritySchemeType.ApiKey
                 });
 
-                options.AddSecurityDefinition("AccessToken", new OpenApiSecurityScheme
+                options.AddSecurityDefinition("Authorization", new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
                     Description = "Please insert user access token into field below",
-                    Name = "AccessToken",
+                    Name = "Authorization",
                     Type = SecuritySchemeType.Http,
                     BearerFormat = "JWT",
                     Scheme = "Bearer"
@@ -139,7 +139,7 @@ namespace API
                             Reference = new OpenApiReference
                             {
                                 Type = ReferenceType.SecurityScheme,
-                                Id = "Authorization"
+                                Id = "ApiKey"
                             }
                         },
                         Array.Empty<string>()
@@ -150,7 +150,7 @@ namespace API
                             Reference = new OpenApiReference
                             {
                                 Type = ReferenceType.SecurityScheme,
-                                Id = "AccessToken"
+                                Id = "Authorization"
                             }
                         },
                         Array.Empty<string>()

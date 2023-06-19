@@ -13,7 +13,7 @@
 
         public async Task InvokeAsync(HttpContext context)
         {
-            if (!context.Request.Headers.TryGetValue("Authorization", out var requestApiKey))
+            if (!context.Request.Headers.TryGetValue("ApiKey", out var requestApiKey))
             {
                 context.Response.StatusCode = 401;
                 await context.Response.WriteAsJsonAsync("API key is not provided in request headers");

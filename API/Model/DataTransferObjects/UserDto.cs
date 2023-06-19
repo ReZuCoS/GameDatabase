@@ -13,16 +13,16 @@ namespace API.Model.DataTransferObjects
         /// <summary>
         /// Game database user data transfer object
         /// </summary>
-        public UserDto(string accessToken, string profileImage)
+        public UserDto(string authorization, string profileImage)
         {
-            AccessToken = accessToken;
+            Authorization = authorization;
             ProfileImage = profileImage;
         }
 
         /// <summary>
         /// User access token
         /// </summary>
-        public string AccessToken { get; set; } = default!;
+        public string Authorization { get; set; } = default!;
 
         /// <summary>
         /// User profile link
