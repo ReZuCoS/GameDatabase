@@ -14,7 +14,7 @@ using System.Text;
 
 namespace API.Controllers
 {
-    // TODO: Add TOTP recoveries generation and usage
+    //TODO: Token update
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
@@ -104,7 +104,7 @@ namespace API.Controllers
 
                 return Ok(new UserDto
                 {
-                    AccessToken = GetJwtToken(user),
+                    Authorization = GetJwtToken(user),
                     ProfileImage = user.ProfileImage
                 });
             }
@@ -162,7 +162,7 @@ namespace API.Controllers
         /// <summary>
         /// If challenge was found in cache and calculations is right, returns user data
         /// </summary>
-        /// <response code="200">Returned user data. If AccessToken is empty, continue with 2FA code</response>
+        /// <response code="200">Returned user data. If Authorization is empty, continue with 2FA code</response>
         /// <response code="500">Unexpected server error</response>
         [HttpPost]
         [AllowAnonymous]
@@ -189,19 +189,19 @@ namespace API.Controllers
                 _cache.Remove(clientSecret.Login);
                 _logger.LogInformation("User authenticated with password: {login}, OTP required: {otp}", user.Login, user.TotpKey is not null);
 
-                var accessToken = GetJwtToken(user);
+                var authorization = GetJwtToken(user);
                 
                 if (user.TotpKey is not null)
                 {
                     _cache.Set(
                         user.Login,
-                        new UserTotpAccess(accessToken, user.TotpKey),
+                        new UserTotpAccessDto(authorization, user.TotpKey),
                         TimeSpan.FromMinutes(5));
                 }
 
                 return Ok(new UserDto()
                 {
-                    AccessToken = user.TotpKey is null ? accessToken : string.Empty,
+                    Authorization = user.TotpKey is null ? authorization : string.Empty,
                     ProfileImage = user.ProfileImage
                 });
             }
@@ -222,9 +222,9 @@ namespace API.Controllers
         [HttpPost]
         [AllowAnonymous]
         [Route("2fa/verify")]
-        public ActionResult<string> Verify2Factor(string login, string code)
+        public async Task<ActionResult<string>> Verify2Factor(string login, string code)
         {
-            var accessData = _cache.Get<UserTotpAccess>(login);
+            var accessData = _cache.Get<UserTotpAccessDto>(login);
 
             if (accessData is null)
             {
@@ -234,14 +234,31 @@ namespace API.Controllers
             var isValid = new Totp(Base32Encoding.ToBytes(accessData.TotpKey))
                 .VerifyTotp(code, out _, VerificationWindow.RfcSpecifiedNetworkDelay);
 
-            if (!isValid)
+            if (isValid)
             {
-                BadRequest("Code is invalid");
+                _cache.Remove(login);
+                return Ok(accessData.Authorization);
             }
 
-            _cache.Remove(login);
+            try
+            {
+                var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Login == login);
 
-            return Ok(accessData.AccessToken);
+                if (user?.TotpRecoveries is null || !user.TotpRecoveries.Contains(code))
+                {
+                    return BadRequest("Invalid TOTP code");
+                }
+
+                user.TotpRecoveries = user.TotpRecoveries.Where(r => r != code).ToArray();
+                _databaseContext.Users.Update(user);
+                await _databaseContext.SaveChangesAsync();
+                _cache.Remove(login);
+                return Ok(accessData.Authorization);
+            }
+            catch (Exception)
+            {
+                return Problem("Internal server error");
+            }
         }
 
         /// <summary>
@@ -254,7 +271,7 @@ namespace API.Controllers
         [HttpGet]
         [Authorize]
         [Route("2fa")]
-        public async Task<ActionResult<string>> Get2FA()
+        public async Task<ActionResult<TwoFactorDto>> Get2FA()
         {
             var login = _contextClaims.Get("login");
 
@@ -275,11 +292,11 @@ namespace API.Controllers
                 return Problem("Internal server error");
             }
 
-            var totpKey = Base32Encoding.ToString(KeyGeneration.GenerateRandomKey(25));
+            var totp = new TwoFactorDto();
 
-            _cache.Set(login, totpKey, TimeSpan.FromMinutes(5));
+            _cache.Set(login, totp, TimeSpan.FromMinutes(5));
 
-            return Ok(totpKey);
+            return Ok(totp);
         }
 
         /// <summary>
@@ -293,7 +310,7 @@ namespace API.Controllers
         [HttpPost]
         [Authorize]
         [Route("2fa")]
-        public async Task<ActionResult<string>> Set2FA(string code)
+        public async Task<ActionResult> Set2FA(string code)
         {
             var login = _contextClaims.Get("login");
 
@@ -311,14 +328,14 @@ namespace API.Controllers
                     return NotFound("User not found");
                 }
 
-                var totpKey = _cache.Get<string>(login);
+                var totp = _cache.Get<TwoFactorDto>(login);
 
-                if (totpKey is null)
+                if (totp is null)
                 {
                     return NotFound("This login haven't generated key or it's expired");
                 }
 
-                var isValid = new Totp(Base32Encoding.ToBytes(totpKey))
+                var isValid = new Totp(Base32Encoding.ToBytes(totp.Key))
                     .VerifyTotp(code, out long _, VerificationWindow.RfcSpecifiedNetworkDelay);
 
                 if (!isValid)
@@ -327,9 +344,10 @@ namespace API.Controllers
                 }
 
                 _cache.Remove(login);
-                user.TotpKey = totpKey;
+                user.TotpKey = totp.Key;
+                user.TotpRecoveries = totp.Recoveries;
                 _databaseContext.Users.Update(user);
-                _databaseContext.SaveChanges();
+                await _databaseContext.SaveChangesAsync();
 
                 return Ok();
             }

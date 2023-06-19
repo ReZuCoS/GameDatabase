@@ -3,14 +3,14 @@
     /// <summary>
     /// User totp access storage
     /// </summary>
-    public class UserTotpAccess
+    public class UserTotpAccessDto
     {
         /// <summary>
         /// User totp access storage constructor
         /// </summary>
-        public UserTotpAccess(string accessToken, string totpKey)
+        public UserTotpAccessDto(string authorization, string totpKey)
         {
-            AccessToken = accessToken;
+            Authorization = authorization;
             TotpKey = totpKey;
         }
 
@@ -22,6 +22,6 @@
         /// <summary>
         /// User's access token
         /// </summary>
-        public string AccessToken { get; set; }
+        public string Authorization { get; set; }
     }
 }
