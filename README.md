@@ -47,7 +47,9 @@ JWT requires key to sign user tokens, so we basically need to add ***JwtSettings
 ```json
 {
   "JwtSettings": {
-    "Key": "<YOUR_JWT_SIGN_KEY>"
+    "Key": "<YOUR_JWT_SIGN_KEY>",
+    "AuthTokenLifetimeInSeconds": <SECONDS_LIFETIME>,
+    "RefreshTokenLifetimeInDays": <DAYS_LIFETIME>
   }
 }
 ```
