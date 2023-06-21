@@ -28,7 +28,7 @@ namespace API.Utils
             var tokenHandler = new JwtSecurityTokenHandler();
 
             var key = Encoding.UTF8.GetBytes(_configuration.GetValue<string>("JwtSettings:Key")!);
-            var tokenLifetime = TimeSpan.FromDays(_configuration.GetValue<int>("JwtSettings:RefreshTokenLifetimeInMonth")!);
+            var tokenLifetime = TimeSpan.FromDays(_configuration.GetValue<int>("JwtSettings:RefreshTokenLifetimeInDays")!);
             var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
 
             var tokenDescriptor = new SecurityTokenDescriptor
