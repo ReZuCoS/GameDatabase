@@ -13,6 +13,7 @@ create table users(
     salt varchar not null,
     totp_key varchar null,
 	totp_recoveries varchar[] null,
+	refresh_token varchar null,
     profile_image varchar null,
     language_key varchar not null default 'EN',
 

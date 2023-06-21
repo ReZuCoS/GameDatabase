@@ -54,6 +54,12 @@ namespace Shared.Model
         public string[]? TotpRecoveries { get; set; }
 
         /// <summary>
+        /// User's refresh token
+        /// </summary>
+        [JsonIgnore]
+        public string? RefreshToken { get; set; }
+
+        /// <summary>
         /// User profile link
         /// </summary>
         [DefaultValue(null)]

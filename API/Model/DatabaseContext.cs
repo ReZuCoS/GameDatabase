@@ -47,6 +47,7 @@ namespace API.Model
                 e.Property(e => e.Salt).HasColumnName("salt");
                 e.Property(e => e.TotpKey).HasColumnName("totp_key");
                 e.Property(e => e.TotpRecoveries).HasColumnName("totp_recoveries");
+                e.Property(e => e.RefreshToken).HasColumnName("refresh_token");
                 e.Property(e => e.ProfileImage).HasColumnName("profile_image");
                 e.Property(e => e.LanguageKey).HasColumnName("language_key");
 
