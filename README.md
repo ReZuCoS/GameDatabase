@@ -48,8 +48,8 @@ JWT requires key to sign user tokens, so we basically need to add ***JwtSettings
 {
   "JwtSettings": {
     "Key": "<YOUR_JWT_SIGN_KEY>",
-    "AuthTokenLifetimeInSeconds": <SECONDS_LIFETIME>,
-    "RefreshTokenLifetimeInDays": <DAYS_LIFETIME>
+    "AuthTokenLifetimeInSeconds": 900,
+    "RefreshTokenLifetimeInDays": 180
   }
 }
 ```
