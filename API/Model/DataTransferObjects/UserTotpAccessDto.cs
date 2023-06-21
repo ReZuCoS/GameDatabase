@@ -8,10 +8,11 @@
         /// <summary>
         /// User totp access storage constructor
         /// </summary>
-        public UserTotpAccessDto(string authorization, string totpKey)
+        public UserTotpAccessDto(string authorization, string refreshToken, string totpKey)
         {
-            Authorization = authorization;
             TotpKey = totpKey;
+            RefreshToken = refreshToken;
+            Authorization = authorization;
         }
 
         /// <summary>
@@ -23,5 +24,10 @@
         /// User's access token
         /// </summary>
         public string Authorization { get; set; }
+
+        /// <summary>
+        /// User's refresh token
+        /// </summary>
+        public string RefreshToken { get; set; }
     }
 }

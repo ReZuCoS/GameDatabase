@@ -1,5 +1,7 @@
 ﻿using API.Middleware;
 using API.Model;
+using API.Utils;
+using API.Utils.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -47,6 +49,7 @@ namespace API
         {
             builder.Services.AddMemoryCache();
             builder.Services.AddControllers();
+            builder.Services.AddHttpContextAccessor();
             builder.Services.AddEndpointsApiExplorer();
 
             builder.Services.Configure<RouteOptions>(options =>
@@ -57,8 +60,6 @@ namespace API
 
             var swagger = GetSwaggerGenOptions();
             builder.Services.AddSwaggerGen(swagger);
-
-            builder.Services.AddHttpContextAccessor();
 
             builder.Configuration
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
@@ -88,8 +89,9 @@ namespace API
                     ValidateIssuerSigningKey = true
                 };
             });
-
+            
             builder.Services.AddAuthorization();
+            builder.Services.AddTransient<IJwtHandler, JwtHandler>();
         }
 
         private static Action<SwaggerGenOptions> GetSwaggerGenOptions()
