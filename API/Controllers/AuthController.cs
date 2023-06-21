@@ -109,20 +109,27 @@ namespace API.Controllers
                 _logger.LogInformation("User authenticated with password: {login}, OTP required: {otp}", user.Login, user.TotpKey is not null);
 
                 var authorization = _jwtHandler.GetUserToken(user);
-                var refreshToken = _jwtHandler.GetRefreshToken();
+                
+                if (user.RefreshToken is null)
+                {
+                    user.RefreshToken = _jwtHandler.GetRefreshToken();
+
+                    _databaseContext.Users.Update(user);
+                    _databaseContext.SaveChanges();
+                }
 
                 if (user.TotpKey is not null)
                 {
                     _cache.Set(
                         user.Login,
-                        new UserTotpAccessDto(authorization, refreshToken, user.TotpKey),
+                        new UserTotpAccessDto(authorization, user.RefreshToken, user.TotpKey),
                         TimeSpan.FromMinutes(5));
                 }
 
                 return Ok(new UserDto()
                 {
                     ProfileImage = user.ProfileImage,
-                    RefreshToken = user.TotpKey is null ? refreshToken : string.Empty,
+                    RefreshToken = user.RefreshToken,
                     Authorization = user.TotpKey is null ? authorization : string.Empty
                 });
             }
