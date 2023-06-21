@@ -1,4 +1,6 @@
-﻿namespace API.Controllers
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace API.Controllers
 {
     /// <summary>
     /// User totp access storage
@@ -18,16 +20,19 @@
         /// <summary>
         /// User's totp key
         /// </summary>
+        [Required]
         public string TotpKey { get; set; }
 
         /// <summary>
         /// User's access token
         /// </summary>
+        [Required]
         public string Authorization { get; set; }
 
         /// <summary>
         /// User's refresh token
         /// </summary>
+        [Required]
         public string RefreshToken { get; set; }
     }
 }

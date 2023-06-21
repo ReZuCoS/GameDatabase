@@ -1,5 +1,6 @@
 ﻿using API.Utils;
 using OtpNet;
+using System.ComponentModel.DataAnnotations;
 
 namespace API.Model.DataTransferObjects
 {
@@ -27,11 +28,13 @@ namespace API.Model.DataTransferObjects
         /// <summary>
         /// TOTP key
         /// </summary>
+        [Required]
         public string Key { get; set; }
         
         /// <summary>
         /// TOTP recovery codes
         /// </summary>
+        [Required]
         public string[] Recoveries { get; set; } = Array.Empty<string>();
     }
 }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace API.Model.DataTransferObjects
 {
     /// <summary>
@@ -23,16 +25,19 @@ namespace API.Model.DataTransferObjects
         /// <summary>
         /// User's access token
         /// </summary>
+        [Required]
         public string Authorization { get; set; } = default!;
 
         /// <summary>
         /// User's refresh token
         /// </summary>
+        [Required]
         public string RefreshToken { get; set; } = default!;
 
         /// <summary>
         /// User profile link
         /// </summary>
+        [Required]
         public string? ProfileImage { get; set; }
     }
 }

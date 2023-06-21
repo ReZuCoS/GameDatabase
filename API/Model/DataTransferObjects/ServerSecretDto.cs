@@ -1,4 +1,6 @@
-﻿namespace API.Model.DataTransferObjects
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace API.Model.DataTransferObjects
 {
     /// <summary>
     /// Server salt container data transfer object
@@ -24,11 +26,13 @@
         /// <summary>
         /// Password salt to get hash
         /// </summary>
+        [Required]
         public string Salt { get; set; } = default!;
 
         /// <summary>
         /// Server challenge
         /// </summary>
+        [Required]
         public string Challenge { get; set; } = default!;
     }
 }
