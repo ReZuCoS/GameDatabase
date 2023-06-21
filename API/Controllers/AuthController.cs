@@ -11,7 +11,7 @@ using Shared.Model;
 
 namespace API.Controllers
 {
-    //TODO: Bearer token refreshing, database user's refresh token field
+    //TODO: Bearer token refreshing
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
@@ -81,7 +81,7 @@ namespace API.Controllers
         /// <summary>
         /// If challenge was found in cache and calculations is right, returns user data
         /// </summary>
-        /// <response code="200">Returned user data. If Authorization is empty, continue with 2FA code</response>
+        /// <response code="200">Returned user data. If Authorization and RefreshToken is empty, continue with 2FA code</response>
         /// <response code="500">Unexpected server error</response>
         [HttpPost]
         [AllowAnonymous]
@@ -189,6 +189,8 @@ namespace API.Controllers
 
             try
             {
+                user.RefreshToken = _jwtHandler.GetRefreshToken();
+
                 await _databaseContext.Users.AddAsync(user);
                 await _databaseContext.SaveChangesAsync();
 
@@ -198,7 +200,7 @@ namespace API.Controllers
                 return Ok(new UserDto
                 {
                     Authorization = _jwtHandler.GetUserToken(user),
-                    RefreshToken = _jwtHandler.GetRefreshToken(),
+                    RefreshToken = user.RefreshToken,
                     ProfileImage = user.ProfileImage
                 });
             }
@@ -369,7 +371,7 @@ namespace API.Controllers
         [HttpPost]
         [Authorize]
         [Route("refresh_token")]
-        public async Task<ActionResult> RefreshToken([FromBody] string refreshToken)
+        public async Task<ActionResult<string>> RefreshToken([FromBody] string refreshToken)
         {
             var login = _jwtHandler.GetContextClaim("login");
             
